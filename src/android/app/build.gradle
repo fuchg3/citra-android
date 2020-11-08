@@ -6,6 +6,8 @@ def buildType
 def abiFilter = "arm64-v8a" //, "x86"
 
 android {
+    buildToolsVersion "30.0.2"
+
     compileSdkVersion 29
 
     compileOptions {
@@ -85,6 +87,8 @@ android {
             path "../../../CMakeLists.txt"
         }
     }
+
+    ndkVersion "21.3.6528147"
 
     defaultConfig {
         externalNativeBuild {
