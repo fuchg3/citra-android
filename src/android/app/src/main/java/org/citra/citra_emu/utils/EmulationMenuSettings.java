@@ -1,7 +1,8 @@
 package org.citra.citra_emu.utils;
 
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
+
+import androidx.preference.PreferenceManager;
 
 import org.citra.citra_emu.CitraApplication;
 

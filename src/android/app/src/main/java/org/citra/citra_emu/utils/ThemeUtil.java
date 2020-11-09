@@ -2,9 +2,9 @@ package org.citra.citra_emu.utils;
 
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.preference.PreferenceManager;
 
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.preference.PreferenceManager;
 
 import org.citra.citra_emu.CitraApplication;
 import org.citra.citra_emu.features.settings.utils.SettingsFile;

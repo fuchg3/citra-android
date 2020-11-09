@@ -2,9 +2,10 @@ package org.citra.citra_emu.features.settings.ui.viewholder;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.TextView;
+
+import androidx.preference.PreferenceManager;
 
 import org.citra.citra_emu.R;
 import org.citra.citra_emu.features.settings.model.view.InputBindingSetting;

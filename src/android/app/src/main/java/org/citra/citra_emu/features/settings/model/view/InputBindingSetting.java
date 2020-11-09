@@ -1,10 +1,11 @@
 package org.citra.citra_emu.features.settings.model.view;
 
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.widget.Toast;
+
+import androidx.preference.PreferenceManager;
 
 import org.citra.citra_emu.CitraApplication;
 import org.citra.citra_emu.NativeLibrary;
