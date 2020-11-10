@@ -1,6 +1,5 @@
 package org.citra.citra_emu.features.settings.ui;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -8,6 +7,8 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -27,7 +28,7 @@ public final class SettingsActivity extends AppCompatActivity implements Setting
     private static final String FRAGMENT_TAG = "settings";
     private SettingsActivityPresenter mPresenter = new SettingsActivityPresenter(this);
 
-    private ProgressDialog dialog;
+    private ProgressBar mProgressBar;
 
     public static void launch(Context context, String menuTag, String gameId) {
         Intent settings = new Intent(context, SettingsActivity.class);
@@ -41,6 +42,8 @@ public final class SettingsActivity extends AppCompatActivity implements Setting
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_settings);
+
+        mProgressBar = findViewById(R.id.progress_bar);
 
         Intent launcher = getIntent();
         String gameID = launcher.getStringExtra(ARG_GAME_ID);
@@ -148,18 +151,12 @@ public final class SettingsActivity extends AppCompatActivity implements Setting
 
     @Override
     public void showLoading() {
-        if (dialog == null) {
-            dialog = new ProgressDialog(this);
-            dialog.setMessage(getString(R.string.load_settings));
-            dialog.setIndeterminate(true);
-        }
-
-        dialog.show();
+        mProgressBar.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void hideLoading() {
-        dialog.dismiss();
+        mProgressBar.setVisibility(View.INVISIBLE);
     }
 
     @Override
