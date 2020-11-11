@@ -159,6 +159,8 @@ public final class NativeLibrary {
 
     public static native String[] GetInstalledGamePaths();
 
+    public static native void InitializeLogging();
+
     // Create the config.ini file.
     public static native void CreateConfigFile();
 
@@ -240,10 +242,10 @@ public final class NativeLibrary {
         @NonNull
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final Activity emulationActivity = Objects.requireNonNull(getActivity());
+            final Activity emulationActivity = requireActivity();
 
-            final String title = Objects.requireNonNull(Objects.requireNonNull(getArguments()).getString("title"));
-            final String message = Objects.requireNonNull(Objects.requireNonNull(getArguments()).getString("message"));
+            final String title = Objects.requireNonNull(requireArguments().getString("title"));
+            final String message = Objects.requireNonNull(requireArguments().getString("message"));
 
             return new AlertDialog.Builder(emulationActivity)
                     .setTitle(title)

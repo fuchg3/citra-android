@@ -10,7 +10,10 @@
 #include <android/native_window_jni.h>
 
 #include "audio_core/dsp_interface.h"
+#include "common/common_paths.h"
 #include "common/file_util.h"
+#include "common/logging/backend.h"
+#include "common/logging/filter.h"
 #include "common/logging/log.h"
 #include "common/microprofile.h"
 #include "common/scm_rev.h"
@@ -294,7 +297,8 @@ void Java_org_citra_citra_1emu_NativeLibrary_SwapScreens(JNIEnv* env, [[maybe_un
 void Java_org_citra_citra_1emu_NativeLibrary_SetUserDirectory(JNIEnv* env,
                                                               [[maybe_unused]] jclass clazz,
                                                               jstring j_directory) {
-    FileUtil::SetCurrentDir(GetJString(env, j_directory));
+    // FileUtil::SetCurrentDir(GetJString(env, j_directory));
+    FileUtil::SetUserPath(GetJString(env, j_directory));
 }
 
 jobjectArray Java_org_citra_citra_1emu_NativeLibrary_GetInstalledGamePaths(
@@ -472,6 +476,17 @@ jstring Java_org_citra_citra_1emu_NativeLibrary_GetCompany(JNIEnv* env,
 jstring Java_org_citra_citra_1emu_NativeLibrary_GetGitRevision(JNIEnv* env,
                                                                [[maybe_unused]] jclass clazz) {
     return nullptr;
+}
+
+void Java_org_citra_citra_1emu_NativeLibrary_InitializeLogging(JNIEnv* env, jclass clazz) {
+    Log::Filter log_filter;
+    log_filter.ParseFilterString(Settings::values.log_filter);
+    Log::SetGlobalFilter(log_filter);
+    Log::AddBackend(std::make_unique<Log::LogcatBackend>());
+    FileUtil::CreateFullPath(FileUtil::GetUserPath(FileUtil::UserPath::LogDir));
+    Log::AddBackend(std::make_unique<Log::FileBackend>(
+        FileUtil::GetUserPath(FileUtil::UserPath::LogDir) + LOG_FILE));
+    LOG_INFO(Frontend, "Logging backend initialised");
 }
 
 void Java_org_citra_citra_1emu_NativeLibrary_CreateConfigFile(JNIEnv* env,

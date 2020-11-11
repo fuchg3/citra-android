@@ -9,6 +9,7 @@ import org.citra.citra_emu.features.settings.model.Settings;
 import org.citra.citra_emu.features.settings.utils.SettingsFile;
 import org.citra.citra_emu.model.GameDatabase;
 import org.citra.citra_emu.utils.AddDirectoryHelper;
+import org.citra.citra_emu.utils.DirectoryInitialization;
 
 public final class MainPresenter {
     public static final int REQUEST_ADD_DIRECTORY = 1;
@@ -25,7 +26,9 @@ public final class MainPresenter {
     public void onCreate() {
         String versionName = BuildConfig.VERSION_NAME;
         mView.setVersionString(versionName);
-        refreshGameList();
+        if (DirectoryInitialization.areCitraDirectoriesReady()) {
+            refreshGameList();
+        }
     }
 
     public void launchFileListActivity(int request) {

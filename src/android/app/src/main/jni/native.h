@@ -80,6 +80,9 @@ JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_SetSysDirectory(J
                                                                                jclass clazz,
                                                                                jstring path);
 
+JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_InitializeLogging(JNIEnv* env,
+                                                                                 jclass clazz);
+
 JNIEXPORT void JNICALL Java_org_citra_citra_1emu_NativeLibrary_CreateConfigFile(JNIEnv* env,
                                                                                 jclass clazz);
 
