@@ -80,7 +80,7 @@ static bool IsWithinTouchscreen(const Layout::FramebufferLayout& layout, unsigne
                   framebuffer_x < layout.bottom_screen.right) ||
                  (framebuffer_x >= layout.cardboard.bottom_screen_right_eye + (layout.width / 2) &&
                   framebuffer_x < layout.cardboard.bottom_screen_right_eye +
-                                  layout.bottom_screen.GetWidth() + (layout.width / 2))));
+                                      layout.bottom_screen.GetWidth() + (layout.width / 2))));
     } else {
         return (framebuffer_y >= layout.bottom_screen.top &&
                 framebuffer_y < layout.bottom_screen.bottom &&
@@ -94,8 +94,8 @@ std::tuple<unsigned, unsigned> EmuWindow::ClipToTouchScreen(unsigned new_x, unsi
         if (Settings::values.render_3d == Settings::StereoRenderOption::SideBySide)
             new_x -= framebuffer_layout.width / 2;
         else if (Settings::values.render_3d == Settings::StereoRenderOption::CardboardVR)
-            new_x -= (framebuffer_layout.width / 2) -
-                     (framebuffer_layout.cardboard.user_x_shift * 2);
+            new_x -=
+                (framebuffer_layout.width / 2) - (framebuffer_layout.cardboard.user_x_shift * 2);
     }
     if (Settings::values.render_3d == Settings::StereoRenderOption::SideBySide) {
         new_x = std::max(new_x, framebuffer_layout.bottom_screen.left / 2);
@@ -119,8 +119,8 @@ bool EmuWindow::TouchPressed(unsigned framebuffer_x, unsigned framebuffer_y) {
         if (Settings::values.render_3d == Settings::StereoRenderOption::SideBySide)
             framebuffer_x -= framebuffer_layout.width / 2;
         else if (Settings::values.render_3d == Settings::StereoRenderOption::CardboardVR)
-            framebuffer_x -= (framebuffer_layout.width / 2) -
-                             (framebuffer_layout.cardboard.user_x_shift * 2);
+            framebuffer_x -=
+                (framebuffer_layout.width / 2) - (framebuffer_layout.cardboard.user_x_shift * 2);
     }
     std::lock_guard guard(touch_state->mutex);
     if (Settings::values.render_3d == Settings::StereoRenderOption::SideBySide) {

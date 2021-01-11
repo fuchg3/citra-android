@@ -475,40 +475,40 @@ FramebufferLayout GetCardboardSettings(FramebufferLayout layout) {
 
     float cardboardScreenWidth;
     float cardboardScreenHeight;
-    switch(Settings::values.layout_option) {
-        case Settings::LayoutOption::MobileLandscape:
-        case Settings::LayoutOption::SideScreen:
-            // If orientation is portrait, only use MobilePortrait
-            if (!is_portrait) {
-                cardboardScreenWidth = top_screen_width + bottom_screen_width;
-                cardboardScreenHeight = is_swapped ? bottom_screen_height : top_screen_height;
-                if (is_swapped)
-                    top_screen_left += bottom_screen_width;
-                else
-                    bottom_screen_left += top_screen_width;
-                break;
-            } else {
-                [[fallthrough]];
-            }
-        case Settings::LayoutOption::SingleScreen:
-        default:
-            if (!is_portrait) {
-                // Default values when using LayoutOption::SingleScreen
-                cardboardScreenWidth = is_swapped ? bottom_screen_width : top_screen_width;
-                cardboardScreenHeight = is_swapped ? bottom_screen_height : top_screen_height;
-                break;
-            } else {
-                [[fallthrough]];
-            }
-        case Settings::LayoutOption::MobilePortrait:
-            cardboardScreenWidth = top_screen_width;
-            cardboardScreenHeight = top_screen_height + bottom_screen_height;
-            bottom_screen_left += (top_screen_width - bottom_screen_width) / 2.0f;
+    switch (Settings::values.layout_option) {
+    case Settings::LayoutOption::MobileLandscape:
+    case Settings::LayoutOption::SideScreen:
+        // If orientation is portrait, only use MobilePortrait
+        if (!is_portrait) {
+            cardboardScreenWidth = top_screen_width + bottom_screen_width;
+            cardboardScreenHeight = is_swapped ? bottom_screen_height : top_screen_height;
             if (is_swapped)
-                top_screen_top += bottom_screen_height;
+                top_screen_left += bottom_screen_width;
             else
-                bottom_screen_top += top_screen_height;
+                bottom_screen_left += top_screen_width;
             break;
+        } else {
+            [[fallthrough]];
+        }
+    case Settings::LayoutOption::SingleScreen:
+    default:
+        if (!is_portrait) {
+            // Default values when using LayoutOption::SingleScreen
+            cardboardScreenWidth = is_swapped ? bottom_screen_width : top_screen_width;
+            cardboardScreenHeight = is_swapped ? bottom_screen_height : top_screen_height;
+            break;
+        } else {
+            [[fallthrough]];
+        }
+    case Settings::LayoutOption::MobilePortrait:
+        cardboardScreenWidth = top_screen_width;
+        cardboardScreenHeight = top_screen_height + bottom_screen_height;
+        bottom_screen_left += (top_screen_width - bottom_screen_width) / 2.0f;
+        if (is_swapped)
+            top_screen_top += bottom_screen_height;
+        else
+            bottom_screen_top += top_screen_height;
+        break;
     }
     float cardboardMaxXShift = (layout.width / 2.0f - cardboardScreenWidth) / 2.0f;
     float cardboardUserXShift = (Settings::values.cardboard_x_shift / 100.0f) * cardboardMaxXShift;
@@ -525,7 +525,7 @@ FramebufferLayout GetCardboardSettings(FramebufferLayout layout) {
     newLayout.cardboard.top_screen_right_eye = newLayout.top_screen.left - cardboardUserXShift;
     newLayout.top_screen.left += cardboardUserXShift;
     newLayout.cardboard.bottom_screen_right_eye =
-            newLayout.bottom_screen.left - cardboardUserXShift;
+        newLayout.bottom_screen.left - cardboardUserXShift;
     newLayout.bottom_screen.left += cardboardUserXShift;
     newLayout.cardboard.user_x_shift = cardboardUserXShift;
 

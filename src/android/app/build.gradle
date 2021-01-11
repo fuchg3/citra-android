@@ -5,6 +5,15 @@ plugins {
 def buildType
 def abiFilter = "arm64-v8a" //, "x86"
 
+/**
+ * Use the number of seconds/10 since Jan 1 2016 as the versionCode.
+ * This lets us upload a new build at most every 10 seconds for the
+ * next 680 years.
+ */
+def autoVersion = (int) (((new Date().getTime() / 1000) - 1451606400) / 10)
+def buildType
+def abiFilter = "arm64-v8a" //, "x86"
+
 android {
     buildToolsVersion "30.0.3"
 

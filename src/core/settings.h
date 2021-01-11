@@ -40,7 +40,14 @@ enum class MicInputType {
     Static,
 };
 
-enum class StereoRenderOption { Off, SideBySide, Anaglyph, Interlaced, ReverseInterlaced, CardboardVR };
+enum class StereoRenderOption {
+    Off,
+    SideBySide,
+    Anaglyph,
+    Interlaced,
+    ReverseInterlaced,
+    CardboardVR
+};
 
 enum class GpuTimingMode {
     Skip,
