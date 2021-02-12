@@ -1,6 +1,5 @@
 package org.citra.citra_emu.features.settings.ui;
 
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.text.TextUtils;
 
@@ -8,8 +7,6 @@ import org.citra.citra_emu.NativeLibrary;
 import org.citra.citra_emu.features.settings.model.Settings;
 import org.citra.citra_emu.features.settings.utils.SettingsFile;
 import org.citra.citra_emu.utils.DirectoryInitialization;
-import org.citra.citra_emu.utils.DirectoryInitialization.DirectoryInitializationState;
-import org.citra.citra_emu.utils.DirectoryStateReceiver;
 import org.citra.citra_emu.utils.Log;
 import org.citra.citra_emu.utils.ThemeUtil;
 
@@ -18,15 +15,13 @@ import java.io.File;
 public final class SettingsActivityPresenter {
     private static final String KEY_SHOULD_SAVE = "should_save";
 
-    private SettingsActivityView mView;
+    private final SettingsActivityView mView;
 
     private Settings mSettings = new Settings();
 
     private int mStackCount;
 
     private boolean mShouldSave;
-
-    private DirectoryStateReceiver directoryStateReceiver;
 
     private String menuTag;
     private String gameId;
@@ -49,7 +44,7 @@ public final class SettingsActivityPresenter {
         prepareCitraDirectoriesIfNeeded();
     }
 
-    void loadSettingsUI() {
+    public void loadSettingsUI() {
         if (mSettings.isEmpty()) {
             if (!TextUtils.isEmpty(gameId)) {
                 mSettings.loadSettings(gameId, mView);
@@ -71,25 +66,8 @@ public final class SettingsActivityPresenter {
             loadSettingsUI();
         } else {
             mView.showLoading();
-            IntentFilter statusIntentFilter = new IntentFilter(
-                    DirectoryInitialization.BROADCAST_ACTION);
 
-            directoryStateReceiver =
-                    new DirectoryStateReceiver(directoryInitializationState ->
-                    {
-                        if (directoryInitializationState == DirectoryInitializationState.CITRA_DIRECTORIES_INITIALIZED) {
-                            mView.hideLoading();
-                            loadSettingsUI();
-                        } else if (directoryInitializationState == DirectoryInitializationState.EXTERNAL_STORAGE_PERMISSION_NEEDED) {
-                            mView.showPermissionNeededHint();
-                            mView.hideLoading();
-                        } else if (directoryInitializationState == DirectoryInitializationState.CANT_FIND_EXTERNAL_STORAGE) {
-                            mView.showExternalStorageNotMountedHint();
-                            mView.hideLoading();
-                        }
-                    });
-
-            mView.startDirectoryInitializationService(directoryStateReceiver, statusIntentFilter);
+            mView.startDirectoryInitialization();
         }
     }
 
@@ -102,10 +80,7 @@ public final class SettingsActivityPresenter {
     }
 
     public void onStop(boolean finishing) {
-        if (directoryStateReceiver != null) {
-            mView.stopListeningToDirectoryInitializationService(directoryStateReceiver);
-            directoryStateReceiver = null;
-        }
+        mView.stopObservingDirectoryInitialization();
 
         if (mSettings != null && finishing && mShouldSave) {
             Log.debug("[SettingsActivity] Settings activity stopping. Saving settings to INI...");

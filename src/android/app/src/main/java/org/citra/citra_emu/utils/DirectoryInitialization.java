@@ -7,11 +7,10 @@
 package org.citra.citra_emu.utils;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Environment;
 
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 
 import org.citra.citra_emu.NativeLibrary;
@@ -28,40 +27,39 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * from the Citra APK to the external file system.
  */
 public final class DirectoryInitialization {
-    public static final String BROADCAST_ACTION = "org.citra.citra_emu.BROADCAST";
 
-    public static final String EXTRA_STATE = "directoryState";
-    private static volatile DirectoryInitializationState directoryState = null;
+    public static final MutableLiveData<DirectoryInitializationState> directoryState = new MutableLiveData<>();
+    private static volatile DirectoryInitializationState sDirectoryState = null;
     private static String userPath;
-    private static AtomicBoolean isCitraDirectoryInitializationRunning = new AtomicBoolean(false);
+    private static final AtomicBoolean isCitraDirectoryInitializationRunning = new AtomicBoolean(false);
 
     public static void start(Context context) {
         // Can take a few seconds to run, so don't block UI thread.
-        //noinspection TrivialFunctionalExpressionUsage
-        ((Runnable) () -> init(context)).run();
+        new Thread(() -> init(context)).start();
     }
 
     private static void init(Context context) {
         if (!isCitraDirectoryInitializationRunning.compareAndSet(false, true))
             return;
 
-        if (directoryState != DirectoryInitializationState.CITRA_DIRECTORIES_INITIALIZED) {
+        if (sDirectoryState != DirectoryInitializationState.CITRA_DIRECTORIES_INITIALIZED) {
             if (PermissionsHandler.hasWriteAccess(context)) {
                 if (setCitraUserDirectory(context)) {
                     initializeInternalStorage(context);
                     NativeLibrary.InitializeLogging();
                     NativeLibrary.CreateConfigFile();
-                    directoryState = DirectoryInitializationState.CITRA_DIRECTORIES_INITIALIZED;
+                    sDirectoryState = DirectoryInitializationState.CITRA_DIRECTORIES_INITIALIZED;
                 } else {
-                    directoryState = DirectoryInitializationState.CANT_FIND_EXTERNAL_STORAGE;
+                    sDirectoryState = DirectoryInitializationState.CANT_FIND_EXTERNAL_STORAGE;
                 }
             } else {
-                directoryState = DirectoryInitializationState.EXTERNAL_STORAGE_PERMISSION_NEEDED;
+                sDirectoryState = DirectoryInitializationState.EXTERNAL_STORAGE_PERMISSION_NEEDED;
             }
         }
 
         isCitraDirectoryInitializationRunning.set(false);
-        sendBroadcastState(directoryState, context);
+        directoryState.postValue(sDirectoryState);
+        //sendBroadcastState(sDirectoryState, context);
     }
 
     private static void deleteDirectoryRecursively(File file) {
@@ -73,11 +71,11 @@ public final class DirectoryInitialization {
     }
 
     public static boolean areCitraDirectoriesReady() {
-        return directoryState == DirectoryInitializationState.CITRA_DIRECTORIES_INITIALIZED;
+        return sDirectoryState == DirectoryInitializationState.CITRA_DIRECTORIES_INITIALIZED;
     }
 
     public static String getUserDirectory() {
-        if (directoryState == null) {
+        if (sDirectoryState == null) {
             throw new IllegalStateException("DirectoryInitialization has to run at least once!");
         } else if (isCitraDirectoryInitializationRunning.get()) {
             throw new IllegalStateException(
@@ -121,13 +119,6 @@ public final class DirectoryInitialization {
 
         // Let the native code know where the Sys directory is.
         SetSysDirectory(sysDirectory.getPath());
-    }
-
-    private static void sendBroadcastState(DirectoryInitializationState state, Context context) {
-        Intent localIntent =
-                new Intent(BROADCAST_ACTION)
-                        .putExtra(EXTRA_STATE, state);
-        LocalBroadcastManager.getInstance(context).sendBroadcast(localIntent);
     }
 
     private static void copyAsset(String asset, File output, Boolean overwrite, Context context) {

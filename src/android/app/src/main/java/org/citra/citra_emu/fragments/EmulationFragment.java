@@ -1,7 +1,6 @@
 package org.citra.citra_emu.fragments;
 
 import android.content.Context;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,7 +17,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.lifecycle.Observer;
 import androidx.preference.PreferenceManager;
 
 import org.citra.citra_emu.NativeLibrary;
@@ -27,7 +26,6 @@ import org.citra.citra_emu.activities.EmulationActivity;
 import org.citra.citra_emu.overlay.InputOverlay;
 import org.citra.citra_emu.utils.DirectoryInitialization;
 import org.citra.citra_emu.utils.DirectoryInitialization.DirectoryInitializationState;
-import org.citra.citra_emu.utils.DirectoryStateReceiver;
 import org.citra.citra_emu.utils.EmulationMenuSettings;
 import org.citra.citra_emu.utils.Log;
 
@@ -42,7 +40,7 @@ public final class EmulationFragment extends Fragment implements SurfaceHolder.C
 
     private EmulationState mEmulationState;
 
-    private DirectoryStateReceiver directoryStateReceiver;
+    private Observer<DirectoryInitializationState> mDirectoryStateObserver;
 
     private EmulationActivity activity;
 
@@ -81,7 +79,7 @@ public final class EmulationFragment extends Fragment implements SurfaceHolder.C
         // So this fragment doesn't restart on configuration changes; i.e. rotation.
         setRetainInstance(true);
 
-        mPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(requireActivity());
 
         String gamePath = getArguments().getString(KEY_GAMEPATH);
         mEmulationState = new EmulationState(gamePath);
@@ -125,9 +123,9 @@ public final class EmulationFragment extends Fragment implements SurfaceHolder.C
 
     @Override
     public void onPause() {
-        if (directoryStateReceiver != null) {
-            LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(directoryStateReceiver);
-            directoryStateReceiver = null;
+        if (mDirectoryStateObserver != null) {
+            DirectoryInitialization.directoryState.removeObserver(mDirectoryStateObserver);
+            mDirectoryStateObserver = null;
         }
 
         if (mEmulationState.isRunning()) {
@@ -145,31 +143,20 @@ public final class EmulationFragment extends Fragment implements SurfaceHolder.C
     }
 
     private void setupCitraDirectoriesThenStartEmulation() {
-        IntentFilter statusIntentFilter = new IntentFilter(
-                DirectoryInitialization.BROADCAST_ACTION);
 
-        directoryStateReceiver =
-                new DirectoryStateReceiver(directoryInitializationState ->
-                {
-                    if (directoryInitializationState ==
-                            DirectoryInitializationState.CITRA_DIRECTORIES_INITIALIZED) {
-                        mEmulationState.run(activity.isActivityRecreated());
-                    } else if (directoryInitializationState ==
-                            DirectoryInitializationState.EXTERNAL_STORAGE_PERMISSION_NEEDED) {
-                        Toast.makeText(getContext(), R.string.write_permission_needed, Toast.LENGTH_SHORT)
-                                .show();
-                    } else if (directoryInitializationState ==
-                            DirectoryInitializationState.CANT_FIND_EXTERNAL_STORAGE) {
-                        Toast.makeText(getContext(), R.string.external_storage_not_mounted,
-                                Toast.LENGTH_SHORT)
-                                .show();
-                    }
-                });
+        mDirectoryStateObserver = directoryInitializationState -> {
+            if (directoryInitializationState == DirectoryInitializationState.CITRA_DIRECTORIES_INITIALIZED) {
+                mEmulationState.run(activity.isActivityRecreated());
+            } else if (directoryInitializationState == DirectoryInitializationState.EXTERNAL_STORAGE_PERMISSION_NEEDED) {
+                Toast.makeText(getContext(), R.string.write_permission_needed, Toast.LENGTH_SHORT)
+                    .show();
+            } else if (directoryInitializationState == DirectoryInitializationState.CANT_FIND_EXTERNAL_STORAGE) {
+                Toast.makeText(getContext(), R.string.external_storage_not_mounted, Toast.LENGTH_SHORT)
+                    .show();
+            }
+        };
 
-        // Registers the DirectoryStateReceiver and its intent filters
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
-                directoryStateReceiver,
-                statusIntentFilter);
+        DirectoryInitialization.directoryState.observe(requireActivity(), mDirectoryStateObserver);
         DirectoryInitialization.start(getActivity());
     }
 

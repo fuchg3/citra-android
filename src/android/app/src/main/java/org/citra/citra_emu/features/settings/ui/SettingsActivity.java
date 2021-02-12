@@ -2,7 +2,6 @@ package org.citra.citra_emu.features.settings.ui;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.Menu;
@@ -14,12 +13,11 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.lifecycle.Observer;
 
 import org.citra.citra_emu.NativeLibrary;
 import org.citra.citra_emu.R;
 import org.citra.citra_emu.utils.DirectoryInitialization;
-import org.citra.citra_emu.utils.DirectoryStateReceiver;
 import org.citra.citra_emu.utils.EmulationMenuSettings;
 
 public final class SettingsActivity extends AppCompatActivity implements SettingsActivityView {
@@ -27,6 +25,8 @@ public final class SettingsActivity extends AppCompatActivity implements Setting
     private static final String ARG_GAME_ID = "game_id";
     private static final String FRAGMENT_TAG = "settings";
     private SettingsActivityPresenter mPresenter = new SettingsActivityPresenter(this);
+
+    private Observer<DirectoryInitialization.DirectoryInitializationState> mDirectoryStateObserver;
 
     private ProgressBar mProgressBar;
 
@@ -137,16 +137,29 @@ public final class SettingsActivity extends AppCompatActivity implements Setting
     }
 
     @Override
-    public void startDirectoryInitializationService(DirectoryStateReceiver receiver, IntentFilter filter) {
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                receiver,
-                filter);
+    public void startDirectoryInitialization() {
         DirectoryInitialization.start(this);
+        mDirectoryStateObserver = directoryInitializationState -> {
+            if (directoryInitializationState == DirectoryInitialization.DirectoryInitializationState.CITRA_DIRECTORIES_INITIALIZED) {
+                hideLoading();
+                mPresenter.loadSettingsUI();
+            } else if (directoryInitializationState == DirectoryInitialization.DirectoryInitializationState.EXTERNAL_STORAGE_PERMISSION_NEEDED) {
+                showPermissionNeededHint();
+                hideLoading();
+            } else if (directoryInitializationState == DirectoryInitialization.DirectoryInitializationState.CANT_FIND_EXTERNAL_STORAGE) {
+                showExternalStorageNotMountedHint();
+                hideLoading();
+            }
+        };
+        DirectoryInitialization.directoryState.observe(this, mDirectoryStateObserver);
     }
 
     @Override
-    public void stopListeningToDirectoryInitializationService(DirectoryStateReceiver receiver) {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
+    public void stopObservingDirectoryInitialization() {
+        if (mDirectoryStateObserver != null) {
+            DirectoryInitialization.directoryState.removeObserver(mDirectoryStateObserver);
+            mDirectoryStateObserver = null;
+        }
     }
 
     @Override
