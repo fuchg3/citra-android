@@ -10,12 +10,11 @@ import org.citra.citra_emu.NativeLibrary;
 import org.citra.citra_emu.utils.Log;
 
 import java.io.File;
-import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import rx.Observable;
+import io.reactivex.rxjava3.core.Observable;
 
 /**
  * A helper class that provides several utilities simplifying interaction with
@@ -141,8 +140,8 @@ public final class GameDatabase extends SQLiteOpenHelper {
                 null,
                 null);    // Order of folders is irrelevant.
 
-        Set<String> allowedExtensions = new HashSet<String>(Arrays.asList(
-                ".3ds", ".3dsx", ".elf", ".axf", ".cci", ".cxi", ".app", ".rar", ".zip", ".7z", ".torrent", ".tar", ".gz"));
+        Set<String> allowedExtensions = new HashSet<>(Arrays.asList(
+            ".3ds", ".3dsx", ".elf", ".axf", ".cci", ".cxi", ".app", ".rar", ".zip", ".7z", ".torrent", ".tar", ".gz"));
 
         // Possibly overly defensive, but ensures that moveToNext() does not skip a row.
         folderCursor.moveToPosition(-1);
@@ -269,7 +268,7 @@ public final class GameDatabase extends SQLiteOpenHelper {
             subscriber.onNext(resultCursor);
 
             // Tell the consumer we're done; it will unsubscribe implicitly.
-            subscriber.onCompleted();
+            subscriber.onComplete();
         });
     }
 

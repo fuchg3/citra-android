@@ -5,8 +5,8 @@ import org.citra.citra_emu.CitraApplication;
 import org.citra.citra_emu.model.GameDatabase;
 import org.citra.citra_emu.utils.Log;
 
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public final class PlatformGamesPresenter {
     private final PlatformGamesView mView;
