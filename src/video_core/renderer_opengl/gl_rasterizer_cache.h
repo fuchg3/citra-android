@@ -37,6 +37,27 @@ class RasterizerCacheOpenGL;
 class TextureFilterer;
 class FormatReinterpreterOpenGL;
 
+struct FormatTuple {
+    GLint internal_format;
+    GLenum format;
+    GLenum type;
+};
+
+constexpr FormatTuple tex_tuple = {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE};
+
+const FormatTuple& GetFormatTuple(SurfaceParams::PixelFormat pixel_format);
+
+struct HostTextureTag {
+    FormatTuple format_tuple;
+    u32 width;
+    u32 height;
+    bool operator==(const HostTextureTag& rhs) const noexcept {
+        return std::tie(format_tuple.format, format_tuple.internal_format, width, height) ==
+               std::tie(rhs.format_tuple.format, rhs.format_tuple.internal_format, rhs.width,
+                        rhs.height);
+    };
+};
+
 struct TextureCubeConfig {
     PAddr px;
     PAddr nx;
@@ -60,6 +81,18 @@ struct TextureCubeConfig {
 } // namespace OpenGL
 
 namespace std {
+template <>
+struct hash<OpenGL::HostTextureTag> {
+    std::size_t operator()(const OpenGL::HostTextureTag& tag) const noexcept {
+        std::size_t hash = 0;
+        boost::hash_combine(hash, tag.format_tuple.format);
+        boost::hash_combine(hash, tag.format_tuple.internal_format);
+        boost::hash_combine(hash, tag.width);
+        boost::hash_combine(hash, tag.height);
+        return hash;
+    }
+};
+
 template <>
 struct hash<OpenGL::TextureCubeConfig> {
     std::size_t operator()(const OpenGL::TextureCubeConfig& config) const noexcept {
@@ -142,6 +175,7 @@ class RasterizerCacheOpenGL;
 
 struct CachedSurface : SurfaceParams, std::enable_shared_from_this<CachedSurface> {
     CachedSurface(RasterizerCacheOpenGL& owner) : owner{owner} {}
+    ~CachedSurface();
 
     bool CanFill(const SurfaceParams& dest_surface, SurfaceInterval fill_interval) const;
     bool CanCopy(const SurfaceParams& dest_surface, SurfaceInterval copy_interval) const;
@@ -235,16 +269,6 @@ struct CachedTextureCube {
     std::shared_ptr<SurfaceWatcher> nz;
 };
 
-struct FormatTuple {
-    GLint internal_format;
-    GLenum format;
-    GLenum type;
-};
-
-constexpr FormatTuple tex_tuple = {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE};
-
-const FormatTuple& GetFormatTuple(SurfaceParams::PixelFormat pixel_format);
-
 static constexpr std::array<FormatTuple, 4> depth_format_tuples = {{
     {GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT}, // D16
     {},
@@ -305,6 +329,12 @@ public:
     /// Clear all cached resources tracked by this cache manager
     void ClearAll(bool flush);
 
+    // Textures from destroyed surfaces are stored here to be recyled to reduce allocation overhead
+    // in the driver
+    // this must be placed above the surface_cache to ensure all cached surfaces are destroyed
+    // before destroying the recycler
+    std::unordered_multimap<HostTextureTag, OGLTexture> host_texture_recycler;
+
 private:
     void DuplicateSurface(const Surface& src_surface, const Surface& dest_surface);
 
@@ -350,10 +380,11 @@ private:
     std::recursive_mutex mutex;
 
 public:
+    OGLTexture AllocateSurfaceTexture(const FormatTuple& format_tuple, u32 width, u32 height);
+
     std::unique_ptr<TextureFilterer> texture_filterer;
     std::unique_ptr<FormatReinterpreterOpenGL> format_reinterpreter;
     std::unique_ptr<TextureDownloaderES> texture_downloader_es;
 };
 
-void AllocateSurfaceTexture(GLuint texture, const FormatTuple& format_tuple, u32 width, u32 height);
 } // namespace OpenGL
