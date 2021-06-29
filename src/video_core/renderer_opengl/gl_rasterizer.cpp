@@ -48,7 +48,7 @@ static bool IsVendorIntel() {
     return gpu_vendor == "Intel Inc.";
 }
 
-RasterizerOpenGL::RasterizerOpenGL()
+RasterizerOpenGL::RasterizerOpenGL(Frontend::EmuWindow& emu_window)
     : is_amd(IsVendorAmd()), vertex_buffer(GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE, is_amd),
       uniform_buffer(GL_UNIFORM_BUFFER, UNIFORM_BUFFER_SIZE, false),
       index_buffer(GL_ELEMENT_ARRAY_BUFFER, INDEX_BUFFER_SIZE, false),
@@ -60,6 +60,11 @@ RasterizerOpenGL::RasterizerOpenGL()
     if (!allow_shadow) {
         LOG_WARNING(Render_OpenGL,
                     "Shadow might not be able to render because of unsupported OpenGL extensions.");
+    }
+
+    if (!GLAD_GL_ARB_copy_image && !GLES) {
+        LOG_WARNING(Render_OpenGL,
+                    "ARB_copy_image not supported. Some games might produce artifacts.");
     }
 
     // Clipping plane 0 is always enabled for PICA fixed clip plane z <= 0
@@ -167,15 +172,16 @@ RasterizerOpenGL::RasterizerOpenGL()
 #ifdef __APPLE__
     if (IsVendorIntel()) {
         shader_program_manager = std::make_unique<ShaderProgramManager>(
+            emu_window,
             VideoCore::g_separable_shader_enabled ? GLAD_GL_ARB_separate_shader_objects : false,
             is_amd);
     } else {
-        shader_program_manager =
-            std::make_unique<ShaderProgramManager>(GLAD_GL_ARB_separate_shader_objects, is_amd);
+        shader_program_manager = std::make_unique<ShaderProgramManager>(
+            emu_window, GLAD_GL_ARB_separate_shader_objects, is_amd);
     }
 #else
-    shader_program_manager =
-        std::make_unique<ShaderProgramManager>(GLAD_GL_ARB_separate_shader_objects, is_amd);
+    shader_program_manager = std::make_unique<ShaderProgramManager>(
+        emu_window, GLAD_GL_ARB_separate_shader_objects, is_amd);
 #endif
 
     glEnable(GL_BLEND);
@@ -780,7 +786,7 @@ bool RasterizerOpenGL::Draw(bool accelerate, bool is_indexed) {
     }
 
     OGLTexture temp_tex;
-    if (need_duplicate_texture) {
+    if (need_duplicate_texture && (GLAD_GL_ARB_copy_image || GLES)) {
         // The game is trying to use a surface as a texture and framebuffer at the same time
         // which causes unpredictable behavior on the host.
         // Making a copy to sample from eliminates this issue and seems to be fairly cheap.
