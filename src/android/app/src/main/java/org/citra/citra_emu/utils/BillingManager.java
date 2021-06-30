@@ -13,7 +13,6 @@ import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.Purchase;
-import com.android.billingclient.api.Purchase.PurchasesResult;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
@@ -30,13 +29,13 @@ public class BillingManager implements PurchasesUpdatedListener {
     private final String BILLING_SKU_PREMIUM = "citra.citra_emu.product_id.premium";
 
     private final Activity mActivity;
-    private BillingClient mBillingClient;
+    private final BillingClient mBillingClient;
     private SkuDetails mSkuPremium;
     private boolean mIsPremiumActive = false;
     private boolean mIsServiceConnected = false;
     private Runnable mUpdateBillingCallback;
 
-    private static SharedPreferences mPreferences = PreferenceManager.getDefaultSharedPreferences(CitraApplication.getAppContext());
+    private static final SharedPreferences mPreferences = PreferenceManager.getDefaultSharedPreferences(CitraApplication.getAppContext());
 
     public BillingManager(Activity activity) {
         mActivity = activity;
@@ -97,7 +96,7 @@ public class BillingManager implements PurchasesUpdatedListener {
 
         Purchase premiumPurchase = null;
         for (Purchase purchase : purchaseList) {
-            if (purchase.getSku().equals(BILLING_SKU_PREMIUM)) {
+            if (purchase.getSkus().contains(BILLING_SKU_PREMIUM)) {
                 premiumPurchase = purchase;
             }
         }
@@ -146,43 +145,34 @@ public class BillingManager implements PurchasesUpdatedListener {
     }
 
     private void querySkuDetails() {
-        Runnable queryToExecute = new Runnable() {
-            @Override
-            public void run() {
-                SkuDetailsParams.Builder params = SkuDetailsParams.newBuilder();
-                List<String> skuList = new ArrayList<>();
+        Runnable queryToExecute = () -> {
+            SkuDetailsParams.Builder params = SkuDetailsParams.newBuilder();
+            List<String> skuList = new ArrayList<>();
 
-                skuList.add(BILLING_SKU_PREMIUM);
-                params.setSkusList(skuList).setType(BillingClient.SkuType.INAPP);
+            skuList.add(BILLING_SKU_PREMIUM);
+            params.setSkusList(skuList).setType(BillingClient.SkuType.INAPP);
 
-                mBillingClient.querySkuDetailsAsync(params.build(),
-                        (billingResult, skuDetailsList) -> onQuerySkuDetailsFinished(skuDetailsList));
-            }
+            mBillingClient.querySkuDetailsAsync(params.build(),
+                    (billingResult, skuDetailsList) -> onQuerySkuDetailsFinished(skuDetailsList));
         };
 
         executeServiceRequest(queryToExecute);
     }
 
-    private void onQueryPurchasesFinished(PurchasesResult result) {
+    private void onQueryPurchasesFinished(BillingResult billingResult, List<Purchase> purchaseList) {
         // Have we been disposed of in the meantime? If so, or bad result code, then quit
-        if (mBillingClient == null || result.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+        if (mBillingClient == null || billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
             updatePremiumState(false);
             return;
         }
         // Update the UI and purchases inventory with new list of purchases
-        onPurchasesUpdated(result.getBillingResult(), result.getPurchasesList());
+        onPurchasesUpdated(billingResult, purchaseList);
     }
 
     private void queryPurchases() {
-        Runnable queryToExecute = new Runnable() {
-            @Override
-            public void run() {
-                final PurchasesResult purchasesResult = mBillingClient.queryPurchases(BillingClient.SkuType.INAPP);
-                onQueryPurchasesFinished(purchasesResult);
-            }
-        };
-
-        executeServiceRequest(queryToExecute);
+        executeServiceRequest(() ->
+                mBillingClient.queryPurchasesAsync(BillingClient.SkuType.INAPP,
+                        this::onQueryPurchasesFinished));
     }
 
     private void startServiceConnection(final Runnable executeOnFinish) {

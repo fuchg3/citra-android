@@ -64,7 +64,7 @@ public final class SingleChoiceViewHolder extends SettingViewHolder {
 
     @Override
     public void onClick(View clicked) {
-        int position = getAdapterPosition();
+        int position = getBindingAdapterPosition();
         if (mItem instanceof SingleChoiceSetting) {
             getAdapter().onSingleChoiceClick((SingleChoiceSetting) mItem, position);
         } else if (mItem instanceof PremiumSingleChoiceSetting) {

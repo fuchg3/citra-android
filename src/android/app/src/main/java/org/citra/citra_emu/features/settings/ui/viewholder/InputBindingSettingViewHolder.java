@@ -51,6 +51,6 @@ public final class InputBindingSettingViewHolder extends SettingViewHolder {
 
     @Override
     public void onClick(View clicked) {
-        getAdapter().onInputBindingClick(mItem, getAdapterPosition());
+        getAdapter().onInputBindingClick(mItem, getBindingAdapterPosition());
     }
 }

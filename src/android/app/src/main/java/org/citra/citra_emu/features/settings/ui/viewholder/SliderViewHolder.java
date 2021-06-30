@@ -40,7 +40,7 @@ public final class SliderViewHolder extends SettingViewHolder {
 
     @Override
     public void onClick(View clicked) {
-        getAdapter().onSliderClick(mItem, getAdapterPosition());
+        getAdapter().onSliderClick(mItem, getBindingAdapterPosition());
     }
 }
 
