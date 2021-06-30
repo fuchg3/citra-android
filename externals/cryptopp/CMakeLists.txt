@@ -144,6 +144,7 @@ set(cryptopp_SOURCES
         cryptopp/filters.cpp
         cryptopp/fips140.cpp
         cryptopp/gcm_simd.cpp
+        cryptopp/gf2n_simd.cpp
         cryptopp/gf2n.cpp
         cryptopp/gfpcrypt.cpp
         cryptopp/hex.cpp
@@ -194,6 +195,13 @@ if(MSVC AND NOT CRYPTOPP_DISABLE_ASM)
 endif()
 
 if ((CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND NOT CRYPTOPP_DISABLE_ASM)
+    if (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+        set(GCM_FLAG "-mssse3 -maes -mpclmul")
+        set(GF2N_FLAG "-mpclmul")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+        set(GCM_FLAG "-march=armv8-a+crypto")
+        set(GF2N_FLAG "-march=armv8-a+crypto")
+    endif()
     check_cxx_compiler_flag(-msse2 CRYPTOPP_HAS_MSSE2)
     check_cxx_compiler_flag(-mssse3 CRYPTOPP_HAS_MSSSE3)
     check_cxx_compiler_flag(-msse4.1 CRYPTOPP_HAS_MSSE41)
@@ -208,7 +216,9 @@ if ((CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GN
     endif()
     if (CRYPTOPP_HAS_MSSSE3 AND CRYPTOPP_HAS_MAES AND CRYPTOPP_HAS_PCLMUL)
         set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/cryptopp/gcm_simd.cpp
-                                    PROPERTIES COMPILE_FLAGS "-mssse3 -maes -mpclmul")
+                                    PROPERTIES COMPILE_FLAGS "${GCM_FLAG}")
+        set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/cryptopp/gf2n_simd.cpp
+                                    PROPERTIES COMPILE_FLAGS "${GF2N_FLAG}")
     endif()
     if (CRYPTOPP_HAS_MSSE41 AND CRYPTOPP_HAS_MAES)
         set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/cryptopp/rijndael_simd.cpp PROPERTIES COMPILE_FLAGS "-msse4.1 -maes")
