@@ -1,22 +1,25 @@
 package org.citra.citra_emu.features.settings.ui.viewholder;
 
+import android.app.Activity;
 import android.view.View;
 import android.widget.TextView;
 
 import org.citra.citra_emu.R;
 import org.citra.citra_emu.features.settings.model.view.SettingsItem;
 import org.citra.citra_emu.features.settings.ui.SettingsAdapter;
-import org.citra.citra_emu.features.settings.ui.SettingsFragmentView;
-import org.citra.citra_emu.ui.main.MainActivity;
+import org.citra.citra_emu.utils.BillingManager;
+import org.citra.citra_emu.utils.Log;
 
 public final class PremiumViewHolder extends SettingViewHolder {
+    private final Activity mActivity;
+    private final BillingManager mBillingManager;
     private TextView mHeaderName;
     private TextView mTextDescription;
-    private SettingsFragmentView mView;
 
-    public PremiumViewHolder(View itemView, SettingsAdapter adapter, SettingsFragmentView view) {
+    public PremiumViewHolder(View itemView, SettingsAdapter adapter, Activity activity) {
         super(itemView, adapter);
-        mView = view;
+        mActivity = activity;
+        mBillingManager = BillingManager.getInstance();
         itemView.setOnClickListener(this);
     }
 
@@ -33,20 +36,20 @@ public final class PremiumViewHolder extends SettingViewHolder {
 
     @Override
     public void onClick(View clicked) {
-        if (MainActivity.isPremiumActive()) {
+        if (mBillingManager.isPremiumActive()) {
             return;
         }
 
         // Invoke billing flow if Premium is not already active, then refresh the UI to indicate
         // the purchase has completed.
-        MainActivity.invokePremiumBilling(() -> updateText());
+        mBillingManager.invokePremiumBilling(mActivity, this::updateText);
     }
 
     /**
      * Update the text shown to the user, based on whether Premium is active
      */
     private void updateText() {
-        if (MainActivity.isPremiumActive()) {
+        if (mBillingManager.isPremiumActive()) {
             mHeaderName.setText(R.string.premium_settings_welcome);
             mTextDescription.setText(R.string.premium_settings_welcome_description);
         } else {

@@ -4,6 +4,10 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
+import androidx.lifecycle.OnLifecycleEvent;
 import androidx.preference.PreferenceManager;
 
 import com.android.billingclient.api.AcknowledgePurchaseParams;
@@ -25,11 +29,13 @@ import org.citra.citra_emu.ui.main.MainActivity;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BillingManager implements PurchasesUpdatedListener {
+/**
+ * Singleton to manage user billing state.
+ */
+public class BillingManager implements LifecycleObserver, PurchasesUpdatedListener {
     private final String BILLING_SKU_PREMIUM = "citra.citra_emu.product_id.premium";
 
-    private final Activity mActivity;
-    private final BillingClient mBillingClient;
+    private BillingClient mBillingClient;
     private SkuDetails mSkuPremium;
     private boolean mIsPremiumActive = false;
     private boolean mIsServiceConnected = false;
@@ -37,10 +43,38 @@ public class BillingManager implements PurchasesUpdatedListener {
 
     private static final SharedPreferences mPreferences = PreferenceManager.getDefaultSharedPreferences(CitraApplication.getAppContext());
 
-    public BillingManager(Activity activity) {
-        mActivity = activity;
-        mBillingClient = BillingClient.newBuilder(mActivity).enablePendingPurchases().setListener(this).build();
-        querySkuDetails();
+    private static volatile BillingManager INSTANCE;
+
+    private BillingManager() {
+    }
+
+    public static BillingManager getInstance() {
+        if (INSTANCE == null) {
+            synchronized (BillingManager.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new BillingManager();
+                }
+            }
+        }
+        return INSTANCE;
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
+    public void create() {
+        Log.debug("Create a new billing client");
+        mBillingClient = BillingClient.newBuilder(CitraApplication.getAppContext())
+                .enablePendingPurchases().setListener(this).build();
+        if (!mIsServiceConnected) {
+            querySkuDetails();
+        }
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    public void destroy() {
+        Log.debug("Destroy billing client");
+        if (mIsServiceConnected) {
+            mBillingClient.endConnection();
+        }
     }
 
     static public boolean isPremiumCached() {
@@ -59,7 +93,7 @@ public class BillingManager implements PurchasesUpdatedListener {
      *
      * @param callback Optional callback, called once, on completion of billing
      */
-    public void invokePremiumBilling(Runnable callback) {
+    public void invokePremiumBilling(Activity activity, Runnable callback) {
         if (mSkuPremium == null) {
             return;
         }
@@ -71,7 +105,7 @@ public class BillingManager implements PurchasesUpdatedListener {
         BillingFlowParams flowParams = BillingFlowParams.newBuilder()
                 .setSkuDetails(mSkuPremium)
                 .build();
-        mBillingClient.launchBillingFlow(mActivity, flowParams);
+        mBillingClient.launchBillingFlow(activity, flowParams);
     }
 
     private void updatePremiumState(boolean isPremiumActive) {
@@ -87,7 +121,7 @@ public class BillingManager implements PurchasesUpdatedListener {
     }
 
     @Override
-    public void onPurchasesUpdated(BillingResult billingResult, List<Purchase> purchaseList) {
+    public void onPurchasesUpdated(@NonNull BillingResult billingResult, List<Purchase> purchaseList) {
         if (purchaseList == null || purchaseList.isEmpty()) {
             // Premium is not active, or billing is unavailable
             updatePremiumState(false);
@@ -112,9 +146,8 @@ public class BillingManager implements PurchasesUpdatedListener {
                                 .setPurchaseToken(premiumPurchase.getPurchaseToken())
                                 .build();
 
-                AcknowledgePurchaseResponseListener acknowledgePurchaseResponseListener = billingResult1 -> {
-                    Toast.makeText(mActivity, R.string.premium_settings_welcome, Toast.LENGTH_SHORT).show();
-                };
+                AcknowledgePurchaseResponseListener acknowledgePurchaseResponseListener = billingResult1 ->
+                        Toast.makeText(CitraApplication.getAppContext(), R.string.premium_settings_welcome, Toast.LENGTH_SHORT).show();
                 mBillingClient.acknowledgePurchase(acknowledgePurchaseParams, acknowledgePurchaseResponseListener);
             }
 
@@ -129,7 +162,7 @@ public class BillingManager implements PurchasesUpdatedListener {
         }
     }
 
-    private void onQuerySkuDetailsFinished(List<SkuDetails> skuDetailsList) {
+    private void onQuerySkuDetailsFinished(BillingResult billingResult, List<SkuDetails> skuDetailsList) {
         if (skuDetailsList == null) {
             // This can happen when no user is signed in
             return;
@@ -145,18 +178,15 @@ public class BillingManager implements PurchasesUpdatedListener {
     }
 
     private void querySkuDetails() {
-        Runnable queryToExecute = () -> {
+        executeServiceRequest(() -> {
             SkuDetailsParams.Builder params = SkuDetailsParams.newBuilder();
             List<String> skuList = new ArrayList<>();
 
             skuList.add(BILLING_SKU_PREMIUM);
             params.setSkusList(skuList).setType(BillingClient.SkuType.INAPP);
 
-            mBillingClient.querySkuDetailsAsync(params.build(),
-                    (billingResult, skuDetailsList) -> onQuerySkuDetailsFinished(skuDetailsList));
-        };
-
-        executeServiceRequest(queryToExecute);
+            mBillingClient.querySkuDetailsAsync(params.build(), this::onQuerySkuDetailsFinished);
+        });
     }
 
     private void onQueryPurchasesFinished(BillingResult billingResult, List<Purchase> purchaseList) {
@@ -171,14 +201,13 @@ public class BillingManager implements PurchasesUpdatedListener {
 
     private void queryPurchases() {
         executeServiceRequest(() ->
-                mBillingClient.queryPurchasesAsync(BillingClient.SkuType.INAPP,
-                        this::onQueryPurchasesFinished));
+                mBillingClient.queryPurchasesAsync(BillingClient.SkuType.INAPP, this::onQueryPurchasesFinished));
     }
 
     private void startServiceConnection(final Runnable executeOnFinish) {
         mBillingClient.startConnection(new BillingClientStateListener() {
             @Override
-            public void onBillingSetupFinished(BillingResult billingResult) {
+            public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
                 if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
                     mIsServiceConnected = true;
                 }

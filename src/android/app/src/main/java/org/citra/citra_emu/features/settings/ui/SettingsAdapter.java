@@ -1,5 +1,6 @@
 package org.citra.citra_emu.features.settings.ui;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.view.LayoutInflater;
@@ -36,15 +37,16 @@ import org.citra.citra_emu.features.settings.ui.viewholder.SettingViewHolder;
 import org.citra.citra_emu.features.settings.ui.viewholder.SingleChoiceViewHolder;
 import org.citra.citra_emu.features.settings.ui.viewholder.SliderViewHolder;
 import org.citra.citra_emu.features.settings.ui.viewholder.SubmenuViewHolder;
-import org.citra.citra_emu.ui.main.MainActivity;
+import org.citra.citra_emu.utils.BillingManager;
 import org.citra.citra_emu.utils.Log;
 
 import java.util.ArrayList;
 
 public final class SettingsAdapter extends RecyclerView.Adapter<SettingViewHolder>
         implements DialogInterface.OnClickListener, SeekBar.OnSeekBarChangeListener {
-    private SettingsFragmentView mView;
-    private Context mContext;
+    private final SettingsFragmentView mView;
+    private final Context mContext;
+    private final BillingManager mBillingManager;
     private ArrayList<SettingsItem> mSettings;
 
     private SettingsItem mClickedItem;
@@ -57,6 +59,7 @@ public final class SettingsAdapter extends RecyclerView.Adapter<SettingViewHolde
     public SettingsAdapter(SettingsFragmentView view, Context context) {
         mView = view;
         mContext = context;
+        mBillingManager = BillingManager.getInstance();
         mClickedPosition = -1;
     }
 
@@ -97,7 +100,7 @@ public final class SettingsAdapter extends RecyclerView.Adapter<SettingViewHolde
 
             case SettingsItem.TYPE_PREMIUM:
                 view = inflater.inflate(R.layout.premium_item_setting, parent, false);
-                return new PremiumViewHolder(view, this, mView);
+                return new PremiumViewHolder(view, this, (Activity) mContext);
 
             default:
                 Log.error("[SettingsAdapter] Invalid view type: " + viewType);
@@ -173,27 +176,27 @@ public final class SettingsAdapter extends RecyclerView.Adapter<SettingViewHolde
     public void onSingleChoiceClick(SingleChoiceSetting item, int position) {
         mClickedPosition = position;
 
-        if (!item.isPremium() || MainActivity.isPremiumActive()) {
+        if (!item.isPremium() || mBillingManager.isPremiumActive()) {
             // Setting is either not Premium, or the user has Premium
             onSingleChoiceClick(item);
             return;
         }
 
         // User needs Premium, invoke the billing flow
-        MainActivity.invokePremiumBilling(() -> onSingleChoiceClick(item));
+        mBillingManager.invokePremiumBilling((Activity) mContext, () -> onSingleChoiceClick(item));
     }
 
     public void onSingleChoiceClick(PremiumSingleChoiceSetting item, int position) {
         mClickedPosition = position;
 
-        if (!item.isPremium() || MainActivity.isPremiumActive()) {
+        if (!item.isPremium() || mBillingManager.isPremiumActive()) {
             // Setting is either not Premium, or the user has Premium
             onSingleChoiceClick(item);
             return;
         }
 
         // User needs Premium, invoke the billing flow
-        MainActivity.invokePremiumBilling(() -> onSingleChoiceClick(item));
+        mBillingManager.invokePremiumBilling((Activity) mContext, () -> onSingleChoiceClick(item));
     }
 
     public void onStringSingleChoiceClick(StringSingleChoiceSetting item) {
@@ -210,14 +213,14 @@ public final class SettingsAdapter extends RecyclerView.Adapter<SettingViewHolde
     public void onStringSingleChoiceClick(StringSingleChoiceSetting item, int position) {
         mClickedPosition = position;
 
-        if (!item.isPremium() || MainActivity.isPremiumActive()) {
+        if (!item.isPremium() || mBillingManager.isPremiumActive()) {
             // Setting is either not Premium, or the user has Premium
             onStringSingleChoiceClick(item);
             return;
         }
 
         // User needs Premium, invoke the billing flow
-        MainActivity.invokePremiumBilling(() -> onStringSingleChoiceClick(item));
+        mBillingManager.invokePremiumBilling((Activity) mContext, () -> onStringSingleChoiceClick(item));
     }
 
     DialogInterface.OnClickListener defaultCancelListener = (dialog, which) -> closeDialog();

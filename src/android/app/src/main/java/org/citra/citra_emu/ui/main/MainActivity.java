@@ -39,10 +39,9 @@ public final class MainActivity extends AppCompatActivity implements MainView {
     private int mFrameLayoutId;
     private PlatformGamesFragment mPlatformGamesFragment;
 
-    private MainPresenter mPresenter = new MainPresenter(this);
+    private final MainPresenter mPresenter = new MainPresenter(this);
 
-    // Singleton to manage user billing state
-    private static BillingManager mBillingManager;
+    private BillingManager mBillingManager;
 
     private static MenuItem mPremiumButton;
 
@@ -73,7 +72,8 @@ public final class MainActivity extends AppCompatActivity implements MainView {
         PicassoUtils.init();
 
         // Setup billing manager, so we can globally query for Premium status
-        mBillingManager = new BillingManager(this);
+        mBillingManager = BillingManager.getInstance();
+        getLifecycle().addObserver(mBillingManager);
 
         // Dismiss previous notifications (should not happen unless a crash occurred)
         EmulationActivity.tryDismissRunningNotification(this);
@@ -83,12 +83,6 @@ public final class MainActivity extends AppCompatActivity implements MainView {
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         if (PermissionsHandler.hasWriteAccess(this)) {
-            if (getSupportFragmentManager() == null) {
-                return;
-            }
-            if (outState == null) {
-                return;
-            }
             getSupportFragmentManager().putFragment(outState, "mPlatformGamesFragment", mPlatformGamesFragment);
         }
     }
@@ -110,7 +104,7 @@ public final class MainActivity extends AppCompatActivity implements MainView {
         inflater.inflate(R.menu.menu_game_grid, menu);
         mPremiumButton = menu.findItem(R.id.button_premium);
 
-        if (mBillingManager.isPremiumCached()) {
+        if (BillingManager.isPremiumCached()) {
             // User had premium in a previous session, hide upsell option
             setPremiumButtonVisible(false);
         }
@@ -249,21 +243,5 @@ public final class MainActivity extends AppCompatActivity implements MainView {
     protected void onDestroy() {
         EmulationActivity.tryDismissRunningNotification(this);
         super.onDestroy();
-    }
-
-    /**
-     * @return true if Premium subscription is currently active
-     */
-    public static boolean isPremiumActive() {
-        return mBillingManager.isPremiumActive();
-    }
-
-    /**
-     * Invokes the billing flow for Premium
-     *
-     * @param callback Optional callback, called once, on completion of billing
-     */
-    public static void invokePremiumBilling(Runnable callback) {
-        mBillingManager.invokePremiumBilling(callback);
     }
 }
