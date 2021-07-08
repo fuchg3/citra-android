@@ -320,9 +320,8 @@ public final class EmulationActivity extends AppCompatActivity {
                 .setTitle(R.string.savestate_warning_title)
                 .setMessage(R.string.savestate_warning_message)
                 .setView(view)
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                    preferences.edit().putBoolean("savestateWarningShown", checkBox.isChecked()).apply();
-                })
+                .setPositiveButton(android.R.string.ok, (dialog, which) ->
+                        preferences.edit().putBoolean("savestateWarningShown", checkBox.isChecked()).apply())
                 .show();
     }
 
@@ -631,16 +630,11 @@ public final class EmulationActivity extends AppCompatActivity {
         builder.setTitle(R.string.emulation_control_scale);
         builder.setView(view);
         final int previousProgress = seekbar.getProgress();
-        builder.setNegativeButton(android.R.string.cancel, (dialogInterface, i) -> {
-            setControlScale(previousProgress);
-        });
+        builder.setNegativeButton(android.R.string.cancel, (dialogInterface, i) ->
+                setControlScale(previousProgress));
         builder.setPositiveButton(android.R.string.ok, (dialogInterface, i) ->
-        {
-            setControlScale(seekbar.getProgress());
-        });
-        builder.setNeutralButton(R.string.slider_default, (dialogInterface, i) -> {
-            setControlScale(50);
-        });
+                setControlScale(seekbar.getProgress()));
+        builder.setNeutralButton(R.string.slider_default, (dialogInterface, i) -> setControlScale(50));
 
         AlertDialog alertDialog = builder.create();
         alertDialog.show();

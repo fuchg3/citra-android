@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class CustomFilePickerFragment extends FilePickerFragment {
-    private static String ALL_FILES = "*";
+    private static final String ALL_FILES = "*";
     private int mTitle;
     private static List<String> extensions = Collections.singletonList(ALL_FILES);
 
@@ -30,8 +30,8 @@ public class CustomFilePickerFragment extends FilePickerFragment {
     @Override
     public Uri toUri(@NonNull final File file) {
         return FileProvider
-                .getUriForFile(getContext(),
-                        getContext().getApplicationContext().getPackageName() + ".filesprovider",
+                .getUriForFile(requireContext(),
+                        requireContext().getApplicationContext().getPackageName() + ".filesprovider",
                         file);
     }
 
@@ -40,10 +40,10 @@ public class CustomFilePickerFragment extends FilePickerFragment {
         super.onActivityCreated(savedInstanceState);
 
         if (mode == MODE_DIR) {
-            TextView ok = getActivity().findViewById(R.id.nnf_button_ok);
+            TextView ok = requireActivity().findViewById(R.id.nnf_button_ok);
             ok.setText(R.string.select_dir);
 
-            TextView cancel = getActivity().findViewById(R.id.nnf_button_cancel);
+            TextView cancel = requireActivity().findViewById(R.id.nnf_button_cancel);
             cancel.setVisibility(View.GONE);
         }
     }

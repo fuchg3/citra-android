@@ -20,11 +20,13 @@ import org.citra.citra_emu.R;
 import org.citra.citra_emu.utils.DirectoryInitialization;
 import org.citra.citra_emu.utils.EmulationMenuSettings;
 
+import java.util.Objects;
+
 public final class SettingsActivity extends AppCompatActivity implements SettingsActivityView {
     private static final String ARG_MENU_TAG = "menu_tag";
     private static final String ARG_GAME_ID = "game_id";
     private static final String FRAGMENT_TAG = "settings";
-    private SettingsActivityPresenter mPresenter = new SettingsActivityPresenter(this);
+    private final SettingsActivityPresenter mPresenter = new SettingsActivityPresenter(this);
 
     private Observer<DirectoryInitialization.DirectoryInitializationState> mDirectoryStateObserver;
 
@@ -52,7 +54,7 @@ public final class SettingsActivity extends AppCompatActivity implements Setting
         mPresenter.onCreate(savedInstanceState, menuTag, gameID);
 
         // Show "Back" button in the action bar for navigation
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
     }
 
     @Override

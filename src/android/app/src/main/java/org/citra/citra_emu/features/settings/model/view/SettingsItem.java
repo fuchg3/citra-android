@@ -4,6 +4,8 @@ import org.citra.citra_emu.features.settings.model.Setting;
 import org.citra.citra_emu.features.settings.model.Settings;
 import org.citra.citra_emu.features.settings.ui.SettingsAdapter;
 
+import java.util.Objects;
+
 /**
  * ViewModel abstraction for an Item in the RecyclerView powering SettingsFragments.
  * Each one corresponds to a {@link Setting} object, so this class's subclasses
@@ -22,14 +24,14 @@ public abstract class SettingsItem {
     public static final int TYPE_DATETIME_SETTING = 7;
     public static final int TYPE_PREMIUM = 8;
 
-    private String mKey;
-    private String mSection;
+    private final String mKey;
+    private final String mSection;
 
     private Setting mSetting;
 
-    private int mNameId;
-    private int mDescriptionId;
-    private boolean mIsPremium;
+    private final int mNameId;
+    private final int mDescriptionId;
+    private final boolean mIsPremium;
 
     /**
      * Base constructor. Takes a key / section name in case the third parameter, the Setting,
@@ -48,7 +50,7 @@ public abstract class SettingsItem {
         mSetting = setting;
         mNameId = nameId;
         mDescriptionId = descriptionId;
-        mIsPremium = (section == Settings.SECTION_PREMIUM);
+        mIsPremium = (Objects.equals(section, Settings.SECTION_PREMIUM));
     }
 
     /**
