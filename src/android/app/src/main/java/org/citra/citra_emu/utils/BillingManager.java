@@ -191,7 +191,7 @@ public class BillingManager implements LifecycleObserver, PurchasesUpdatedListen
 
     private void onQueryPurchasesFinished(BillingResult billingResult, List<Purchase> purchaseList) {
         // Have we been disposed of in the meantime? If so, or bad result code, then quit
-        if (mBillingClient == null || billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+        if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
             updatePremiumState(false);
             return;
         }

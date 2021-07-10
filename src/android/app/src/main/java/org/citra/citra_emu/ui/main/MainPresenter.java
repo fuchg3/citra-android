@@ -44,25 +44,21 @@ public final class MainPresenter {
         }
         mLastClickTime = SystemClock.elapsedRealtime();
 
-        switch (itemId) {
-            case R.id.menu_settings_core:
-                mView.launchSettingsActivity(SettingsFile.FILE_NAME_CONFIG);
-                return true;
-
-            case R.id.button_add_directory:
-                launchFileListActivity(REQUEST_ADD_DIRECTORY);
-                return true;
-
-            case R.id.button_install_cia:
-                launchFileListActivity(REQUEST_INSTALL_CIA);
-                return true;
-
-            case R.id.button_premium:
-                mView.launchSettingsActivity(Settings.SECTION_PREMIUM);
-                return true;
+        if (itemId == R.id.menu_settings_core) {
+            mView.launchSettingsActivity(SettingsFile.FILE_NAME_CONFIG);
+            return true;
+        } else if (itemId == R.id.button_add_directory) {
+            launchFileListActivity(REQUEST_ADD_DIRECTORY);
+            return true;
+        } else if (itemId == R.id.button_install_cia) {
+            launchFileListActivity(REQUEST_INSTALL_CIA);
+            return true;
+        } else if (itemId == R.id.button_premium) {
+            mView.launchSettingsActivity(Settings.SECTION_PREMIUM);
+            return true;
+        } else {
+            return false;
         }
-
-        return false;
     }
 
     public void addDirIfNeeded(AddDirectoryHelper helper) {

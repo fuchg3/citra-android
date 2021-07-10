@@ -41,8 +41,6 @@ public final class MainActivity extends AppCompatActivity implements MainView {
 
     private final MainPresenter mPresenter = new MainPresenter(this);
 
-    private BillingManager mBillingManager;
-
     private static MenuItem mPremiumButton;
 
     @Override
@@ -72,7 +70,7 @@ public final class MainActivity extends AppCompatActivity implements MainView {
         PicassoUtils.init();
 
         // Setup billing manager, so we can globally query for Premium status
-        mBillingManager = BillingManager.getInstance();
+        BillingManager mBillingManager = BillingManager.getInstance();
         getLifecycle().addObserver(mBillingManager);
 
         // Dismiss previous notifications (should not happen unless a crash occurred)

@@ -24,7 +24,7 @@ public final class SettingsFragment extends Fragment implements SettingsFragment
     private static final String ARGUMENT_MENU_TAG = "menu_tag";
     private static final String ARGUMENT_GAME_ID = "game_id";
 
-    private SettingsFragmentPresenter mPresenter = new SettingsFragmentPresenter(this);
+    private final SettingsFragmentPresenter mPresenter = new SettingsFragmentPresenter(this);
     private SettingsActivityView mActivity;
 
     private SettingsAdapter mAdapter;
@@ -53,10 +53,10 @@ public final class SettingsFragment extends Fragment implements SettingsFragment
         super.onCreate(savedInstanceState);
 
         setRetainInstance(true);
-        String menuTag = getArguments().getString(ARGUMENT_MENU_TAG);
-        String gameId = getArguments().getString(ARGUMENT_GAME_ID);
+        String menuTag = requireArguments().getString(ARGUMENT_MENU_TAG);
+        String gameId = requireArguments().getString(ARGUMENT_GAME_ID);
 
-        mAdapter = new SettingsAdapter(this, getActivity());
+        mAdapter = new SettingsAdapter(this, requireActivity());
 
         mPresenter.onCreate(menuTag, gameId);
     }
@@ -75,9 +75,9 @@ public final class SettingsFragment extends Fragment implements SettingsFragment
 
         recyclerView.setAdapter(mAdapter);
         recyclerView.setLayoutManager(manager);
-        recyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), null));
+        recyclerView.addItemDecoration(new DividerItemDecoration(requireActivity(), null));
 
-        SettingsActivityView activity = (SettingsActivityView) getActivity();
+        SettingsActivityView activity = (SettingsActivityView) requireActivity();
 
         mPresenter.onViewCreated(activity.getSettings());
     }
@@ -116,7 +116,7 @@ public final class SettingsFragment extends Fragment implements SettingsFragment
 
     @Override
     public void loadSubMenu(String menuKey) {
-        mActivity.showSettingsFragment(menuKey, true, getArguments().getString(ARGUMENT_GAME_ID));
+        mActivity.showSettingsFragment(menuKey, true, requireArguments().getString(ARGUMENT_GAME_ID));
     }
 
     @Override

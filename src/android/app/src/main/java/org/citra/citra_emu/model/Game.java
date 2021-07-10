@@ -6,12 +6,12 @@ import android.database.Cursor;
 import java.nio.file.Paths;
 
 public final class Game {
-    private String mTitle;
-    private String mDescription;
-    private String mPath;
-    private String mGameId;
-    private String mCompany;
-    private String mRegions;
+    private final String mTitle;
+    private final String mDescription;
+    private final String mPath;
+    private final String mGameId;
+    private final String mCompany;
+    private final String mRegions;
 
     public Game(String title, String description, String regions, String path,
                 String gameId, String company) {

@@ -8,7 +8,7 @@ import org.citra.citra_emu.features.settings.model.view.SettingsItem;
 import org.citra.citra_emu.features.settings.ui.SettingsAdapter;
 
 public abstract class SettingViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-    private SettingsAdapter mAdapter;
+    private final SettingsAdapter mAdapter;
 
     public SettingViewHolder(View itemView, SettingsAdapter adapter) {
         super(itemView);

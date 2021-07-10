@@ -392,7 +392,7 @@ public final class NativeLibrary {
             synchronized (lock) {
                 try {
                     lock.wait();
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
             }
 
@@ -421,7 +421,7 @@ public final class NativeLibrary {
         synchronized (alertPromptLock) {
             try {
                 alertPromptLock.wait();
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
         alertPromptInProgress = false;

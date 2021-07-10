@@ -29,6 +29,8 @@ import org.citra.citra_emu.utils.DirectoryInitialization.DirectoryInitialization
 import org.citra.citra_emu.utils.EmulationMenuSettings;
 import org.citra.citra_emu.utils.Log;
 
+import java.util.Locale;
+
 public final class EmulationFragment extends Fragment implements SurfaceHolder.Callback, Choreographer.FrameCallback {
     private static final String KEY_GAMEPATH = "gamepath";
 
@@ -81,7 +83,7 @@ public final class EmulationFragment extends Fragment implements SurfaceHolder.C
 
         mPreferences = PreferenceManager.getDefaultSharedPreferences(requireActivity());
 
-        String gamePath = getArguments().getString(KEY_GAMEPATH);
+        String gamePath = requireArguments().getString(KEY_GAMEPATH);
         mEmulationState = new EmulationState(gamePath);
     }
 
@@ -184,8 +186,9 @@ public final class EmulationFragment extends Fragment implements SurfaceHolder.C
             {
                 final double[] perfStats = NativeLibrary.GetPerfStats();
                 if (perfStats[FPS] > 0) {
-                    mPerfStats.setText(String.format("FPS: %d Speed: %d%%", (int) (perfStats[FPS] + 0.5),
-                            (int) (perfStats[SPEED] * 100.0 + 0.5)));
+                    mPerfStats.setText(String.format(Locale.getDefault(), "FPS: %d Speed: %d%%",
+                                                     (int) (perfStats[FPS] + 0.5),
+                                                     (int) (perfStats[SPEED] * 100.0 + 0.5)));
                 }
 
                 perfStatsUpdateHandler.postDelayed(perfStatsUpdater, 3000);
@@ -230,12 +233,12 @@ public final class EmulationFragment extends Fragment implements SurfaceHolder.C
     }
 
     public void startConfiguringControls() {
-        getView().findViewById(R.id.done_control_config).setVisibility(View.VISIBLE);
+        requireView().findViewById(R.id.done_control_config).setVisibility(View.VISIBLE);
         mInputOverlay.setIsInEditMode(true);
     }
 
     public void stopConfiguringControls() {
-        getView().findViewById(R.id.done_control_config).setVisibility(View.GONE);
+        requireView().findViewById(R.id.done_control_config).setVisibility(View.GONE);
         mInputOverlay.setIsInEditMode(false);
     }
 

@@ -32,7 +32,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public final class SettingsFragmentPresenter {
-    private SettingsFragmentView mView;
+    private final SettingsFragmentView mView;
 
     private String mMenuTag;
     private String mGameID;

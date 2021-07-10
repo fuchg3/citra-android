@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 public final class GameAdapter extends RecyclerView.Adapter<GameViewHolder> implements
         View.OnClickListener {
     private Cursor mCursor;
-    private GameDataSetObserver mObserver;
+    private final GameDataSetObserver mObserver;
 
     private boolean mDatasetValid;
     private long mLastClickTime = 0;
@@ -205,7 +205,7 @@ public final class GameAdapter extends RecyclerView.Adapter<GameViewHolder> impl
     }
 
     public static class SpacesItemDecoration extends DividerItemDecoration {
-        private int space;
+        private final int space;
 
         public SpacesItemDecoration(Drawable divider, int space) {
             super(divider);

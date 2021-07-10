@@ -75,7 +75,7 @@ public final class EmulationActivity extends AppCompatActivity {
 
     public static final int REQUEST_SELECT_AMIIBO = 2;
     private static final int EMULATION_RUNNING_NOTIFICATION = 0x1000;
-    private static SparseIntArray buttonsActionsMap = new SparseIntArray();
+    private static final SparseIntArray buttonsActionsMap = new SparseIntArray();
 
     static {
         buttonsActionsMap.append(R.id.menu_emulation_edit_layout,

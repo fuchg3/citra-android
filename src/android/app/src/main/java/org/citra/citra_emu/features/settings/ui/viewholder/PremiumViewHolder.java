@@ -8,7 +8,6 @@ import org.citra.citra_emu.R;
 import org.citra.citra_emu.features.settings.model.view.SettingsItem;
 import org.citra.citra_emu.features.settings.ui.SettingsAdapter;
 import org.citra.citra_emu.utils.BillingManager;
-import org.citra.citra_emu.utils.Log;
 
 public final class PremiumViewHolder extends SettingViewHolder {
     private final Activity mActivity;

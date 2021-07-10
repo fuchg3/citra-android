@@ -30,6 +30,7 @@ import org.citra.citra_emu.features.settings.model.view.StringSingleChoiceSettin
 import org.citra.citra_emu.features.settings.model.view.SubmenuSetting;
 import org.citra.citra_emu.features.settings.ui.viewholder.CheckBoxSettingViewHolder;
 import org.citra.citra_emu.features.settings.ui.viewholder.DateTimeViewHolder;
+import org.citra.citra_emu.features.settings.ui.viewholder.EmptyViewHolder;
 import org.citra.citra_emu.features.settings.ui.viewholder.HeaderViewHolder;
 import org.citra.citra_emu.features.settings.ui.viewholder.InputBindingSettingViewHolder;
 import org.citra.citra_emu.features.settings.ui.viewholder.PremiumViewHolder;
@@ -104,7 +105,7 @@ public final class SettingsAdapter extends RecyclerView.Adapter<SettingViewHolde
 
             default:
                 Log.error("[SettingsAdapter] Invalid view type: " + viewType);
-                return null;
+                return new EmptyViewHolder(null, this);
         }
     }
 
