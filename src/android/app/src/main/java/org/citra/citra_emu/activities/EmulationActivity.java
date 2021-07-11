@@ -19,6 +19,8 @@ import android.widget.CheckBox;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -120,6 +122,8 @@ public final class EmulationActivity extends AppCompatActivity {
     private boolean activityRecreated;
     private String mSelectedTitle;
     private String mPath;
+    private ActivityResultLauncher<Intent> mSelectAmiiboLauncher;
+    public ActivityResultLauncher<Intent> mSelectImageLauncher;
 
     public static void launch(FragmentActivity activity, String path, String title) {
         Intent launcher = new Intent(activity, EmulationActivity.class);
@@ -186,6 +190,25 @@ public final class EmulationActivity extends AppCompatActivity {
         setTitle(mSelectedTitle);
 
         mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        mSelectAmiiboLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    // If the user picked a file, as opposed to just backing out.
+                    if (result.getResultCode() == MainActivity.RESULT_OK) {
+                        String[] selectedFiles = FileBrowserHelper.getSelectedFiles(result.getData());
+                        if (selectedFiles == null)
+                            return;
+
+                        onAmiiboSelected(selectedFiles[0]);
+                    }
+                }
+        );
+        mSelectImageLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> StillImageCameraHelper.OnFilePickerResult(
+                        result.getResultCode() == RESULT_OK ? result.getData() : null)
+        );
 
         // Start a foreground service to prevent the app from getting killed in the background
         foregroundService = new Intent(EmulationActivity.this, ForegroundService.class);
@@ -451,9 +474,8 @@ public final class EmulationActivity extends AppCompatActivity {
                 break;
 
             case MENU_ACTION_LOAD_AMIIBO:
-                FileBrowserHelper.openFilePicker(this, REQUEST_SELECT_AMIIBO,
-                                                 R.string.select_amiibo,
-                                                 Collections.singletonList("bin"), false);
+                mSelectAmiiboLauncher.launch(FileBrowserHelper.createFilePickerIntent(
+                        this, R.string.select_amiibo, Collections.singletonList("bin"), false));
                 break;
 
             case MENU_ACTION_REMOVE_AMIIBO:
@@ -521,26 +543,6 @@ public final class EmulationActivity extends AppCompatActivity {
         }
 
         return NativeLibrary.onGamePadEvent(input.getDescriptor(), button, action);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent result) {
-        super.onActivityResult(requestCode, resultCode, result);
-        switch (requestCode) {
-            case StillImageCameraHelper.REQUEST_CAMERA_FILE_PICKER:
-                StillImageCameraHelper.OnFilePickerResult(resultCode == RESULT_OK ? result : null);
-                break;
-            case REQUEST_SELECT_AMIIBO:
-                // If the user picked a file, as opposed to just backing out.
-                if (resultCode == MainActivity.RESULT_OK) {
-                    String[] selectedFiles = FileBrowserHelper.getSelectedFiles(result);
-                    if (selectedFiles == null)
-                        return;
-
-                    onAmiiboSelected(selectedFiles[0]);
-                }
-                break;
-        }
     }
 
     private void onAmiiboSelected(String selectedFile) {

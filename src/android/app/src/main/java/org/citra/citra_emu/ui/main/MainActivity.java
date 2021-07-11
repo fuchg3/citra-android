@@ -8,6 +8,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -43,6 +45,9 @@ public final class MainActivity extends AppCompatActivity implements MainView {
 
     private static MenuItem mPremiumButton;
 
+    private ActivityResultLauncher<Intent> mSelectCIALauncher;
+    private ActivityResultLauncher<Intent> mSelectGameDirectoryLauncher;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         ThemeUtil.applyTheme();
@@ -56,6 +61,33 @@ public final class MainActivity extends AppCompatActivity implements MainView {
 
         mFrameLayoutId = R.id.games_platform_frame;
         mPresenter.onCreate();
+
+        mSelectCIALauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    // If the user picked a file, as opposed to just backing out.
+                    if (result.getResultCode() == MainActivity.RESULT_OK) {
+                        NativeLibrary.InstallCIAS(
+                                FileBrowserHelper.getSelectedFiles(result.getData()));
+                        mPresenter.refreshGameList();
+                    }
+                }
+        );
+        mSelectGameDirectoryLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    // If the user picked a file, as opposed to just backing out.
+                    if (result.getResultCode() == MainActivity.RESULT_OK) {
+                        // When a new directory is picked, we currently will reset the existing games
+                        // database. This effectively means that only one game directory is supported.
+                        // TODO(bunnei): Consider fixing this in the future, or removing code for this.
+                        getContentResolver().insert(GameProvider.URI_RESET, null);
+                        // Add the new directory
+                        mPresenter.onDirectorySelected(
+                                FileBrowserHelper.getSelectedDirectory(result.getData()));
+                    }
+                }
+        );
 
         if (savedInstanceState == null) {
             StartupHandler.HandleInit(this);
@@ -145,18 +177,15 @@ public final class MainActivity extends AppCompatActivity implements MainView {
         if (PermissionsHandler.hasWriteAccess(this)) {
             switch (request) {
                 case MainPresenter.REQUEST_ADD_DIRECTORY:
-                    FileBrowserHelper.openDirectoryPicker(this,
-                                                      MainPresenter.REQUEST_ADD_DIRECTORY,
-                                                      R.string.select_game_folder,
-                                                      Arrays.asList("elf", "axf", "cci", "3ds",
-                                                                    "cxi", "app", "3dsx", "cia",
-                                                                    "rar", "zip", "7z", "torrent",
-                                                                    "tar", "gz"));
+                    mSelectGameDirectoryLauncher.launch(FileBrowserHelper.createDirectoryPickerIntent(
+                            this, R.string.select_game_folder,
+                            Arrays.asList("elf", "axf", "cci", "3ds", "cxi", "app", "3dsx", "cia",
+                                          "rar", "zip", "7z", "torrent", "tar", "gz")));
                     break;
                 case MainPresenter.REQUEST_INSTALL_CIA:
-                    FileBrowserHelper.openFilePicker(this, MainPresenter.REQUEST_INSTALL_CIA,
-                                                     R.string.install_cia_title,
-                                                     Collections.singletonList("cia"), true);
+                    mSelectCIALauncher.launch(FileBrowserHelper.createFilePickerIntent(
+                            this, R.string.install_cia_title,
+                            Collections.singletonList("cia"), true));
                     break;
             }
         } else {
@@ -164,59 +193,27 @@ public final class MainActivity extends AppCompatActivity implements MainView {
         }
     }
 
-    /**
-     * @param requestCode An int describing whether the Activity that is returning did so successfully.
-     * @param resultCode  An int describing what Activity is giving us this callback.
-     * @param result      The information the returning Activity is providing us.
-     */
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent result) {
-        super.onActivityResult(requestCode, resultCode, result);
-        switch (requestCode) {
-            case MainPresenter.REQUEST_ADD_DIRECTORY:
-                // If the user picked a file, as opposed to just backing out.
-                if (resultCode == MainActivity.RESULT_OK) {
-                    // When a new directory is picked, we currently will reset the existing games
-                    // database. This effectively means that only one game directory is supported.
-                    // TODO(bunnei): Consider fixing this in the future, or removing code for this.
-                    getContentResolver().insert(GameProvider.URI_RESET, null);
-                    // Add the new directory
-                    mPresenter.onDirectorySelected(FileBrowserHelper.getSelectedDirectory(result));
-                }
-                break;
-                case MainPresenter.REQUEST_INSTALL_CIA:
-                    // If the user picked a file, as opposed to just backing out.
-                    if (resultCode == MainActivity.RESULT_OK) {
-                        NativeLibrary.InstallCIAS(FileBrowserHelper.getSelectedFiles(result));
-                        mPresenter.refreshGameList();
-                    }
-                    break;
-        }
-    }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case PermissionsHandler.REQUEST_CODE_WRITE_PERMISSION:
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    DirectoryInitialization.start(this);
+        if (requestCode == PermissionsHandler.REQUEST_CODE_WRITE_PERMISSION) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                DirectoryInitialization.start(this);
 
-                    mPlatformGamesFragment = new PlatformGamesFragment();
-                    getSupportFragmentManager().beginTransaction().add(mFrameLayoutId, mPlatformGamesFragment)
-                            .commit();
+                mPlatformGamesFragment = new PlatformGamesFragment();
+                getSupportFragmentManager().beginTransaction()
+                        .add(mFrameLayoutId, mPlatformGamesFragment)
+                        .commit();
 
-                    // Immediately prompt user to select a game directory on first boot
-                    if (mPresenter != null) {
-                        mPresenter.launchFileListActivity(MainPresenter.REQUEST_ADD_DIRECTORY);
-                    }
-                } else {
-                    Toast.makeText(this, R.string.write_permission_needed, Toast.LENGTH_SHORT)
-                            .show();
+                // Immediately prompt user to select a game directory on first boot
+                if (mPresenter != null) {
+                    mPresenter.launchFileListActivity(MainPresenter.REQUEST_ADD_DIRECTORY);
                 }
-                break;
-            default:
-                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-                break;
+            } else {
+                Toast.makeText(this, R.string.write_permission_needed, Toast.LENGTH_SHORT)
+                        .show();
+            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
     }
 

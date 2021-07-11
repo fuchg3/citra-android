@@ -32,10 +32,8 @@ public final class StillImageCameraHelper {
         emulationActivity.runOnUiThread(() -> {
             Intent intent = new Intent(Intent.ACTION_PICK);
             intent.setDataAndType(MediaStore.Images.Media.INTERNAL_CONTENT_URI, "image/*");
-            emulationActivity.startActivityForResult(
-                    Intent.createChooser(intent,
-                            emulationActivity.getString(R.string.camera_select_image)),
-                    REQUEST_CAMERA_FILE_PICKER);
+            emulationActivity.mSelectImageLauncher.launch(
+                    Intent.createChooser(intent, emulationActivity.getString(R.string.camera_select_image)));
         });
 
         synchronized (filePickerLock) {

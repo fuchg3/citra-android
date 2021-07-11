@@ -5,7 +5,7 @@ import android.net.Uri;
 import android.os.Environment;
 
 import androidx.annotation.Nullable;
-import androidx.fragment.app.FragmentActivity;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.nononsenseapps.filepicker.FilePickerActivity;
 import com.nononsenseapps.filepicker.Utils;
@@ -16,7 +16,8 @@ import java.io.File;
 import java.util.List;
 
 public final class FileBrowserHelper {
-    public static void openDirectoryPicker(FragmentActivity activity, int requestCode, int title, List<String> extensions) {
+    public static Intent createDirectoryPickerIntent(AppCompatActivity activity, int title,
+                                                     List<String> extensions) {
         Intent i = new Intent(activity, CustomFilePickerActivity.class);
 
         i.putExtra(FilePickerActivity.EXTRA_ALLOW_MULTIPLE, false);
@@ -27,11 +28,11 @@ public final class FileBrowserHelper {
         i.putExtra(CustomFilePickerActivity.EXTRA_TITLE, title);
         i.putExtra(CustomFilePickerActivity.EXTRA_EXTENSIONS, String.join(",", extensions));
 
-        activity.startActivityForResult(i, requestCode);
+        return i;
     }
 
-    public static void openFilePicker(FragmentActivity activity, int requestCode, int title,
-                                      List<String> extensions, boolean allowMultiple) {
+    public static Intent createFilePickerIntent(AppCompatActivity activity, int title,
+                                                List<String> extensions, boolean allowMultiple) {
         Intent i = new Intent(activity, CustomFilePickerActivity.class);
 
         i.putExtra(FilePickerActivity.EXTRA_ALLOW_MULTIPLE, allowMultiple);
@@ -42,7 +43,7 @@ public final class FileBrowserHelper {
         i.putExtra(CustomFilePickerActivity.EXTRA_TITLE, title);
         i.putExtra(CustomFilePickerActivity.EXTRA_EXTENSIONS, String.join(",", extensions));
 
-        activity.startActivityForResult(i, requestCode);
+        return i;
     }
 
     @Nullable
